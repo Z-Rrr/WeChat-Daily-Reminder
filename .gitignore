@@ -1,0 +1,18 @@
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+.venv312/
+
+# Local runtime artifacts
+logs/
+
+# Local-only config
+config.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/

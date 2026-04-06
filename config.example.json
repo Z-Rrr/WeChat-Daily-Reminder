@@ -1,0 +1,37 @@
+{
+  "jobs": [
+    {
+      "name": "morning-weather",
+      "time": "08:30",
+      "to": "文件传输助手",
+      "message_source": {
+        "type": "http_json",
+        "url": "https://wttr.in/Shanghai?format=3",
+        "method": "GET",
+        "timeout_seconds": 5,
+        "fallback": "${date} ${weekday} 早上好，今天天气暂时获取失败，请注意出行。"
+      },
+      "enabled": true
+    },
+    {
+      "name": "lunch-hitokoto",
+      "time": "12:20",
+      "to": "文件传输助手",
+      "message_source": {
+        "type": "http_json",
+        "url": "https://v1.hitokoto.cn/?encode=text",
+        "method": "GET",
+        "timeout_seconds": 5,
+        "fallback": "${date} ${weekday} 午间提醒：喝口水，活动一下肩颈。"
+      },
+      "enabled": true
+    },
+    {
+      "name": "evening-reminder",
+      "time": "18:30",
+      "to": "文件传输助手",
+      "message": "下班前记得复盘今天的工作。",
+      "enabled": true
+    }
+  ]
+}
