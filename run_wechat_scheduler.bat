@@ -2,8 +2,8 @@
 setlocal
 chcp 65001 >nul
 
-set "PROJECT_DIR=C:\Users\Administrator\Desktop\ZR\学习agent的代码项目"
-set "PYTHON_EXE=%PROJECT_DIR%\.venv312\Scripts\python.exe"
+set "PROJECT_DIR=%~dp0"
+set "PYTHON_EXE=%PROJECT_DIR%.venv312\Scripts\python.exe"
 
 echo [INFO] Project: %PROJECT_DIR%
 cd /d "%PROJECT_DIR%"

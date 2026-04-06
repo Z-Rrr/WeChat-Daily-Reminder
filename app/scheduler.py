@@ -15,7 +15,7 @@ def create_scheduler(
     config: AppConfig,
     send_func: Callable[[str, str], None],
 ) -> BlockingScheduler:
-    scheduler = BlockingScheduler(timezone="Asia/Shanghai")
+    scheduler = BlockingScheduler(timezone=config.timezone)
 
     for job in config.jobs:
         if not job.enabled:
@@ -39,8 +39,12 @@ def _run_job(job: MessageJob, send_func: Callable[[str, str], None]) -> None:
     started_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info("job_start name=%s to=%s at=%s", job.name, job.to, started_at)
 
-    content = resolve_job_message(job)
-    send_func(job.to, content)
+    try:
+        content = resolve_job_message(job)
+        send_func(job.to, content)
+    except Exception:
+        logger.exception("job_error name=%s to=%s", job.name, job.to)
+        return
 
     finished_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.info("job_success name=%s to=%s at=%s", job.name, job.to, finished_at)
