@@ -40,12 +40,13 @@
 - name: 任务唯一名称
 - time: 24 小时制时间，格式 HH:MM
 - to: 微信会话名称（联系人备注名/群名）
-- message: 直接发送的内容；也支持 ${date}、${time}、${weekday} 变量
+- message: 直接发送的内容；也支持 ${date}、${time}、${datetime}、${weekday} 变量
 - message_source: 外部消息源对象，当前支持 http_json
 - message_source.url: 接口地址
 - message_source.json_path: 从 JSON 中提取文案的路径，例如 data.message（文本接口可不填）
 - message_source.fallback: 接口失败时使用的兜底文案
 - enabled: 是否启用
+- timezone: 调度时区，默认 Asia/Shanghai，可改为任意 IANA 时区名（如 America/New_York）
 
 ## 运行
 

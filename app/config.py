@@ -33,6 +33,7 @@ class MessageJob:
 @dataclass(frozen=True)
 class AppConfig:
     jobs: list[MessageJob]
+    timezone: str = "Asia/Shanghai"
 
 
 def load_config(config_path: Path) -> AppConfig:
@@ -88,7 +89,11 @@ def load_config(config_path: Path) -> AppConfig:
     if not jobs:
         raise ValueError("Config has no jobs. Add at least one scheduled job.")
 
-    return AppConfig(jobs=jobs)
+    timezone = raw.get("timezone", "Asia/Shanghai")
+    if not isinstance(timezone, str) or not timezone.strip():
+        raise ValueError("Config 'timezone' must be a non-empty string.")
+
+    return AppConfig(jobs=jobs, timezone=timezone.strip())
 
 
 def _required_str(item: dict, key: str, idx: int) -> str:
