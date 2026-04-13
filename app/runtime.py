@@ -49,10 +49,10 @@ def run(
     if not jobs:
         raise RuntimeError("No enabled jobs found in config.")
 
-    logger = logging.getLogger(__name__)
     logger.info("scheduler_started jobs=%s", len(jobs))
     for job in jobs:
-        logger.info("registered_job id=%s next_run=%s", job.id, job.next_run_time)
+        next_run = getattr(job, "next_run_time", None)
+        logger.info("registered_job id=%s next_run=%s", job.id, next_run)
 
     try:
         scheduler.start()
