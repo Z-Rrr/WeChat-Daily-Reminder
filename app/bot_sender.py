@@ -1,38 +1,42 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
-from urllib import error, request
+from urllib import error, parse, request
 
 
 @dataclass(frozen=True)
-class WebhookBotConfig:
-    webhook_url: str
-    api_key: str | None = None
+class WechatBotWebhookConfig:
+    base_url: str
+    token: str
     timeout_seconds: int = 15
 
 
-class WebhookBotSender:
-    def __init__(self, config: WebhookBotConfig) -> None:
+class WechatBotWebhookSender:
+    def __init__(self, config: WechatBotWebhookConfig) -> None:
         self.config = config
 
     def send(self, recipient: str, content: str) -> None:
+        logger = logging.getLogger(__name__)
         payload = {
-            "recipient": recipient,
-            "content": content,
+            "to": recipient,
+            "isRoom": False,
+            "data": {
+                "type": "text",
+                "content": content,
+            },
         }
         body = json.dumps(payload).encode("utf-8")
 
-        headers = {
-            "Content-Type": "application/json",
-        }
-        if self.config.api_key:
-            headers["Authorization"] = f"Bearer {self.config.api_key}"
+        webhook_url = self.config.base_url.rstrip("/") + "/webhook/msg/v2"
+        query = parse.urlencode({"token": self.config.token})
+        full_url = f"{webhook_url}?{query}"
 
         req = request.Request(
-            self.config.webhook_url,
+            full_url,
             method="POST",
-            headers=headers,
+            headers={"Content-Type": "application/json"},
             data=body,
         )
 
@@ -40,15 +44,21 @@ class WebhookBotSender:
             with request.urlopen(req, timeout=self.config.timeout_seconds) as response:
                 raw = response.read().decode("utf-8", errors="replace")
         except error.URLError as exc:
-            raise RuntimeError(f"Webhook send failed: {exc}") from exc
+            raise RuntimeError(f"Wechatbot webhook send failed: {exc}") from exc
 
         if not raw:
+            logger.info("wechatbot_webhook_send recipient=%s", recipient)
             return
 
         try:
             data = json.loads(raw)
         except json.JSONDecodeError:
+            logger.info("wechatbot_webhook_send recipient=%s", recipient)
             return
 
         if isinstance(data, dict) and data.get("success") is False:
-            raise RuntimeError(f"Webhook send rejected: {data.get('error', 'unknown error')}")
+            raise RuntimeError(
+                f"Wechatbot webhook rejected: {data.get('message') or data.get('error', 'unknown error')}"
+            )
+
+        logger.info("wechatbot_webhook_send recipient=%s", recipient)

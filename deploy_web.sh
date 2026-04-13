@@ -3,13 +3,18 @@ set -e
 
 PROJECT_HOME="/home/azureuser/WeChat-Daily-Reminder"
 VENV_PATH="$PROJECT_HOME/venv"
-BOT_WEBHOOK_URL="${BOT_WEBHOOK_URL:-}"
-BOT_API_KEY="${BOT_API_KEY:-}"
+BOT_WEBHOOK_BASE_URL="${BOT_WEBHOOK_BASE_URL:-}"
+BOT_TOKEN="${BOT_TOKEN:-}"
 TIMEZONE_NAME="${TIMEZONE_NAME:-Asia/Shanghai}"
 WEB_PORT="${WEB_PORT:-8000}"
 
-if [ -z "$BOT_WEBHOOK_URL" ]; then
-  echo "[ERROR] BOT_WEBHOOK_URL not set"
+if [ -z "$BOT_WEBHOOK_BASE_URL" ]; then
+  echo "[ERROR] BOT_WEBHOOK_BASE_URL not set"
+  exit 1
+fi
+
+if [ -z "$BOT_TOKEN" ]; then
+  echo "[ERROR] BOT_TOKEN not set"
   exit 1
 fi
 
@@ -52,10 +57,10 @@ User=azureuser
 WorkingDirectory=$PROJECT_HOME
 Environment="PATH=$VENV_PATH/bin"
 Environment="PYTHONUNBUFFERED=1"
-Environment="BOT_WEBHOOK_URL=$BOT_WEBHOOK_URL"
-Environment="BOT_API_KEY=$BOT_API_KEY"
+Environment="BOT_WEBHOOK_BASE_URL=$BOT_WEBHOOK_BASE_URL"
+Environment="BOT_TOKEN=$BOT_TOKEN"
 Environment="TIMEZONE_NAME=$TIMEZONE_NAME"
-ExecStart=$VENV_PATH/bin/python web_main.py --host 0.0.0.0 --port $WEB_PORT --db-path data/reminders.db --timezone $TIMEZONE_NAME --bot-webhook-url $BOT_WEBHOOK_URL --bot-api-key $BOT_API_KEY
+ExecStart=$VENV_PATH/bin/python web_main.py --host 0.0.0.0 --port $WEB_PORT --db-path data/reminders.db --timezone $TIMEZONE_NAME --bot-webhook-base-url $BOT_WEBHOOK_BASE_URL --bot-token $BOT_TOKEN
 Restart=always
 RestartSec=10
 

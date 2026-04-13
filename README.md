@@ -16,12 +16,12 @@
 
 Web 模式入口：
 
-    python web_main.py --host 0.0.0.0 --port 8000 --db-path data/reminders.db --timezone Asia/Shanghai --bot-webhook-url <你的机器人URL> --bot-api-key <可选>
+    python web_main.py --host 0.0.0.0 --port 8000 --db-path data/reminders.db --timezone Asia/Shanghai --bot-webhook-base-url <你的机器人服务根地址> --bot-token <你的个人token>
 
 云端自动部署 Web 模式：
 
-    export BOT_WEBHOOK_URL=<你的机器人URL>
-    export BOT_API_KEY=<可选密钥>
+    export BOT_WEBHOOK_BASE_URL=<你的机器人服务根地址>
+    export BOT_TOKEN=<你的个人token>
     export TIMEZONE_NAME=Asia/Shanghai
     bash deploy_web.sh
 

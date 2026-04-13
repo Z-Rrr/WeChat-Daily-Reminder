@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import Flask, jsonify, redirect, render_template_string, request
 
-from app.bot_sender import WebhookBotConfig, WebhookBotSender
+from app.bot_sender import WechatBotWebhookConfig, WechatBotWebhookSender
 from app.reminder_store import ReminderStore
 
 
@@ -122,20 +122,20 @@ def _validate_time(value: str) -> str:
 def create_app(
     db_path: Path,
     timezone_name: str,
-    bot_webhook_url: str,
-    bot_api_key: str | None,
+  bot_webhook_base_url: str,
+  bot_token: str,
     bot_timeout_seconds: int,
 ) -> Flask:
     app = Flask(__name__)
     logger = logging.getLogger("web")
 
     store = ReminderStore(db_path)
-    sender = WebhookBotSender(
-        WebhookBotConfig(
-            webhook_url=bot_webhook_url,
-            api_key=bot_api_key,
-            timeout_seconds=bot_timeout_seconds,
-        )
+    sender = WechatBotWebhookSender(
+      WechatBotWebhookConfig(
+        base_url=bot_webhook_base_url,
+        token=bot_token,
+        timeout_seconds=bot_timeout_seconds,
+      )
     )
     tz = ZoneInfo(timezone_name)
 
@@ -232,8 +232,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=8000)
     parser.add_argument("--db-path", default="data/reminders.db")
     parser.add_argument("--timezone", default="Asia/Shanghai")
-    parser.add_argument("--bot-webhook-url", required=True)
-    parser.add_argument("--bot-api-key", default=None)
+  parser.add_argument("--bot-webhook-base-url", required=True)
+  parser.add_argument("--bot-token", required=True)
     parser.add_argument("--bot-timeout-seconds", type=int, default=15)
     return parser.parse_args()
 
@@ -245,8 +245,8 @@ def main() -> None:
     app = create_app(
         db_path=Path(args.db_path).resolve(),
         timezone_name=args.timezone,
-        bot_webhook_url=args.bot_webhook_url,
-        bot_api_key=args.bot_api_key,
+      bot_webhook_base_url=args.bot_webhook_base_url,
+      bot_token=args.bot_token,
         bot_timeout_seconds=args.bot_timeout_seconds,
     )
 
