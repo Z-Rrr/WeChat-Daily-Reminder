@@ -10,6 +10,19 @@ LOG_DIR="/var/log/wechat-reminder"
 NGROK_URL="${NGROK_URL:-}"
 GATEWAY_API_KEY="${GATEWAY_API_KEY:-}"
 
+if command -v python3.12 >/dev/null 2>&1; then
+    PYTHON_CMD="python3.12"
+elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_CMD="python3"
+elif command -v python >/dev/null 2>&1; then
+    PYTHON_CMD="python"
+else
+    echo "[ERROR] Python is not installed on this server."
+    exit 1
+fi
+
+echo "[INFO] Using Python interpreter: $PYTHON_CMD"
+
 echo "======================================================"
 echo "WeChat Daily Reminder - Azure Linux Deployment"
 echo "======================================================"
@@ -42,9 +55,13 @@ fi
 cd "$PROJECT_HOME"
 
 # 创建虚拟环境
-if [ ! -d "$VENV_PATH" ]; then
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
+    if [ -d "$VENV_PATH" ]; then
+        echo "[WARNING] Existing venv is incomplete, recreating..."
+        rm -rf "$VENV_PATH"
+    fi
     echo "[INFO] Creating Python virtual environment..."
-    python3.12 -m venv "$VENV_PATH"
+    "$PYTHON_CMD" -m venv "$VENV_PATH"
 fi
 
 # 激活虚拟环境并安装依赖
