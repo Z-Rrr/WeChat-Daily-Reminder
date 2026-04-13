@@ -8,6 +8,23 @@
 
 现在也支持从 Markdown 计划文件读取“下一天要在什么时间发送什么消息”，这样你后续可以直接通过聊天让我改明日计划，而不用手动改 JSON。
 
+另外新增了云端 Web 模式：
+
+- 一个网页管理后台（Flask）用于录入/查看/删除提醒
+- 一个 SQLite 数据库保存提醒任务
+- 一个后台调度器每分钟自动检查并发送到机器人 Webhook
+
+Web 模式入口：
+
+    python web_main.py --host 0.0.0.0 --port 8000 --db-path data/reminders.db --timezone Asia/Shanghai --bot-webhook-url <你的机器人URL> --bot-api-key <可选>
+
+云端自动部署 Web 模式：
+
+    export BOT_WEBHOOK_URL=<你的机器人URL>
+    export BOT_API_KEY=<可选密钥>
+    export TIMEZONE_NAME=Asia/Shanghai
+    bash deploy_web.sh
+
 ## 环境要求
 
 - Windows 系统

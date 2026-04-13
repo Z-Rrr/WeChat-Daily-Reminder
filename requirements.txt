@@ -1,3 +1,4 @@
 apscheduler==3.10.4
 wxauto @ git+https://github.com/cluic/wxauto.git@b3c763761fa0ca4f030a7b7234b89c179d51bec0; platform_system == "Windows"
 flask==2.3.3
+tzdata>=2024.1
