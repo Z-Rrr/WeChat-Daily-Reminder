@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import socket
 from dataclasses import dataclass
 from typing import Optional
 from urllib import error, request
@@ -23,6 +25,7 @@ class WeChatSender:
     def _send_via_gateway(self, recipient: str, content: str) -> None:
         """Send message via local HTTP gateway."""
         logger = logging.getLogger(__name__)
+        timeout_seconds = float(os.getenv("WECHAT_GATEWAY_TIMEOUT_SECONDS", "30"))
         
         payload = json.dumps({
             "recipient": recipient,
@@ -41,12 +44,27 @@ class WeChatSender:
         )
         
         try:
-            with request.urlopen(req, timeout=10) as response:
+            with request.urlopen(req, timeout=timeout_seconds) as response:
                 result = json.loads(response.read().decode("utf-8"))
                 if not result.get("success"):
                     raise RuntimeError(f"Gateway error: {result.get('error')}")
                 logger.info(f"gateway_send recipient={recipient}")
+        except TimeoutError:
+            # wxauto + ngrok can finish delivery but return HTTP response slowly.
+            logger.warning(
+                "gateway_timeout recipient=%s timeout=%ss; message may already be delivered",
+                recipient,
+                timeout_seconds,
+            )
+            return
         except error.URLError as exc:
+            if isinstance(exc.reason, socket.timeout):
+                logger.warning(
+                    "gateway_timeout recipient=%s timeout=%ss; message may already be delivered",
+                    recipient,
+                    timeout_seconds,
+                )
+                return
             raise RuntimeError(f"Failed to reach gateway: {exc}") from exc
         except Exception as exc:
             raise RuntimeError(f"Gateway request failed: {exc}") from exc
