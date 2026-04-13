@@ -1,4 +1,8 @@
 {
+  "daily_plan": {
+    "path": "daily_plan.example.md",
+    "target_date_offset_days": 1
+  },
   "jobs": [
     {
       "name": "morning-weather",

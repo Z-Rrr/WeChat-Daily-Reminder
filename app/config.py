@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.plan import load_markdown_plan_jobs
+
 
 TIME_RE = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 
@@ -33,6 +35,13 @@ class MessageJob:
 @dataclass(frozen=True)
 class AppConfig:
     jobs: list[MessageJob]
+    timezone: str = "Asia/Shanghai"
+
+
+@dataclass(frozen=True)
+class DailyPlanConfig:
+    path: str
+    target_date_offset_days: int = 1
 
 
 def load_config(config_path: Path) -> AppConfig:
@@ -40,55 +49,73 @@ def load_config(config_path: Path) -> AppConfig:
         raise FileNotFoundError(f"Config file not found: {config_path}")
 
     raw = json.loads(config_path.read_text(encoding="utf-8"))
-    if "jobs" not in raw or not isinstance(raw["jobs"], list):
-        raise ValueError("Config must contain a 'jobs' array.")
+
+    timezone = raw.get("timezone", "Asia/Shanghai")
+    if not isinstance(timezone, str) or not timezone.strip():
+        raise ValueError("Config 'timezone' must be a non-empty string.")
 
     jobs: list[MessageJob] = []
-    for idx, item in enumerate(raw["jobs"]):
-        if not isinstance(item, dict):
-            raise ValueError(f"jobs[{idx}] must be an object.")
 
-        name = _required_str(item, "name", idx)
-        time = _required_str(item, "time", idx)
-        to = _required_str(item, "to", idx)
-        enabled = item.get("enabled", True)
-        if not isinstance(enabled, bool):
-            raise ValueError(f"jobs[{idx}].enabled must be boolean.")
+    if "jobs" in raw:
+        if not isinstance(raw["jobs"], list):
+            raise ValueError("Config 'jobs' must be an array when present.")
 
-        static_message: str | None = None
-        http_json_source: HttpJsonSourceConfig | None = None
+        for idx, item in enumerate(raw["jobs"]):
+            if not isinstance(item, dict):
+                raise ValueError(f"jobs[{idx}] must be an object.")
 
-        if isinstance(item.get("message_source"), dict):
-            http_json_source = _parse_http_json_source(item["message_source"], idx)
-        elif isinstance(item.get("message"), dict):
-            http_json_source = _parse_http_json_source(item["message"], idx)
-        elif isinstance(item.get("message"), str):
-            static_message = _required_str(item, "message", idx)
-        else:
-            raise ValueError(
-                f"jobs[{idx}] must define either a string 'message' or a 'message_source' object."
+            name = _required_str(item, "name", idx)
+            time = _required_str(item, "time", idx)
+            to = _required_str(item, "to", idx)
+            enabled = item.get("enabled", True)
+            if not isinstance(enabled, bool):
+                raise ValueError(f"jobs[{idx}].enabled must be boolean.")
+
+            static_message: str | None = None
+            http_json_source: HttpJsonSourceConfig | None = None
+
+            if isinstance(item.get("message_source"), dict):
+                http_json_source = _parse_http_json_source(item["message_source"], idx)
+            elif isinstance(item.get("message"), dict):
+                http_json_source = _parse_http_json_source(item["message"], idx)
+            elif isinstance(item.get("message"), str):
+                static_message = _required_str(item, "message", idx)
+            else:
+                raise ValueError(
+                    f"jobs[{idx}] must define either a string 'message' or a 'message_source' object."
+                )
+
+            if TIME_RE.match(time) is None:
+                raise ValueError(
+                    f"jobs[{idx}].time must match HH:MM in 24-hour format, got '{time}'."
+                )
+
+            jobs.append(
+                MessageJob(
+                    name=name,
+                    time=time,
+                    to=to,
+                    enabled=enabled,
+                    static_message=static_message,
+                    http_json_source=http_json_source,
+                )
             )
 
-        if TIME_RE.match(time) is None:
-            raise ValueError(
-                f"jobs[{idx}].time must match HH:MM in 24-hour format, got '{time}'."
-            )
-
-        jobs.append(
-            MessageJob(
-                name=name,
-                time=time,
-                to=to,
-                enabled=enabled,
-                static_message=static_message,
-                http_json_source=http_json_source,
+    daily_plan = raw.get("daily_plan")
+    if daily_plan is not None:
+        plan_config = _parse_daily_plan_config(daily_plan)
+        jobs.extend(
+            load_markdown_plan_jobs(
+                config_path.parent / plan_config.path,
+                timezone.strip(),
+                plan_config.target_date_offset_days,
             )
         )
 
     if not jobs:
-        raise ValueError("Config has no jobs. Add at least one scheduled job.")
+        raise ValueError("Config has no jobs. Add at least one scheduled job or daily_plan.")
 
-    return AppConfig(jobs=jobs)
+    return AppConfig(jobs=jobs, timezone=timezone.strip())
 
 
 def _required_str(item: dict, key: str, idx: int) -> str:
@@ -147,4 +174,24 @@ def _parse_http_json_source(raw: Any, idx: int) -> HttpJsonSourceConfig:
         headers=normalized_headers,
         json_path=json_path.strip() if isinstance(json_path, str) else None,
         fallback=fallback.strip() if isinstance(fallback, str) else None,
+    )
+
+
+def _parse_daily_plan_config(raw: Any) -> DailyPlanConfig:
+    if not isinstance(raw, dict):
+        raise ValueError("Config 'daily_plan' must be an object.")
+
+    path = raw.get("path")
+    if not isinstance(path, str) or not path.strip():
+        raise ValueError("Config 'daily_plan.path' must be a non-empty string.")
+
+    target_date_offset_days = raw.get("target_date_offset_days", 1)
+    if not isinstance(target_date_offset_days, int) or target_date_offset_days < 0:
+        raise ValueError(
+            "Config 'daily_plan.target_date_offset_days' must be a zero or positive integer."
+        )
+
+    return DailyPlanConfig(
+        path=path.strip(),
+        target_date_offset_days=target_date_offset_days,
     )

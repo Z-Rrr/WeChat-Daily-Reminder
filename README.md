@@ -6,6 +6,8 @@
 
 本项目使用 Windows 桌面微信自动化（wxauto）完成发送。它不依赖个人微信开放 API，适合本地电脑常驻运行的场景。
 
+现在也支持从 Markdown 计划文件读取“下一天要在什么时间发送什么消息”，这样你后续可以直接通过聊天让我改明日计划，而不用手动改 JSON。
+
 ## 环境要求
 
 - Windows 系统
@@ -29,6 +31,7 @@
 
 - 直接填写 message 字符串
 - 使用 message_source 从外部接口拉取消息，支持失败时回退到 fallback
+- 使用 daily_plan 从 Markdown 文件读取下一天的发送计划
 
 当前示例已接入两类真实外部文案源：
 
@@ -40,12 +43,25 @@
 - name: 任务唯一名称
 - time: 24 小时制时间，格式 HH:MM
 - to: 微信会话名称（联系人备注名/群名）
-- message: 直接发送的内容；也支持 ${date}、${time}、${weekday} 变量
+- message: 直接发送的内容；也支持 ${date}、${time}、${datetime}、${weekday} 变量
 - message_source: 外部消息源对象，当前支持 http_json
 - message_source.url: 接口地址
 - message_source.json_path: 从 JSON 中提取文案的路径，例如 data.message（文本接口可不填）
 - message_source.fallback: 接口失败时使用的兜底文案
+- daily_plan.path: Markdown 计划文件路径
+- daily_plan.target_date_offset_days: 读取哪一天的计划，默认 1 表示明天
 - enabled: 是否启用
+- timezone: 调度时区，默认 Asia/Shanghai，可改为任意 IANA 时区名（如 America/New_York）
+
+Markdown 计划文件格式示例：
+
+    ## 2026-04-14
+
+    - 08:30 | 文件传输助手 | 早上好，今天先完成最重要的三件事。
+    - 12:20 | 文件传输助手 | 午间记得喝水、走动一下。
+    - 18:30 | 文件传输助手 | 下班前收尾今天的工作，顺手写下明天第一件事。
+
+如果某条消息下方有缩进行，也会作为同一条消息继续发送。
 
 ## 运行
 

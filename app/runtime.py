@@ -13,9 +13,12 @@ def run(
     config_path: Path,
     once_job_name: str | None = None,
     preview_job_name: str | None = None,
+    gateway_url: str | None = None,
+    gateway_api_key: str | None = None,
 ) -> None:
     config = load_config(config_path)
     _setup_logging(config_path.parent)
+    logger = logging.getLogger(__name__)
 
     if preview_job_name is not None:
         job = _find_job_by_name(config.jobs, preview_job_name)
@@ -26,14 +29,19 @@ def run(
     if once_job_name is not None:
         job = _find_job_by_name(config.jobs, once_job_name)
 
-        logger = logging.getLogger(__name__)
-        sender = WeChatSender()
+        sender = WeChatSender(
+            gateway_url=gateway_url,
+            gateway_api_key=gateway_api_key,
+        )
         logger.info("manual_run name=%s to=%s", job.name, job.to)
         sender.send(job.to, resolve_job_message(job))
         logger.info("manual_run_success name=%s to=%s", job.name, job.to)
         return
 
-    sender = WeChatSender()
+    sender = WeChatSender(
+        gateway_url=gateway_url,
+        gateway_api_key=gateway_api_key,
+    )
     from app.scheduler import create_scheduler
 
     scheduler = create_scheduler(config, sender.send)
